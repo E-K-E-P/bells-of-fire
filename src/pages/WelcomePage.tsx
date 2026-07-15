@@ -1,6 +1,8 @@
 import Button from "../components/Button";
+import { useNavigate } from "react-router-dom";
 
 export default function WelcomePage() {
+  const navigate = useNavigate();
   return (
     <main className="min-h-screen bg-[#121212] text-[#E9DCC9] flex flex-col items-center justify-center px-8 text-center">
       <div className="text-7xl">🔥</div>
@@ -14,7 +16,7 @@ export default function WelcomePage() {
       </p>
 
       <div className="mt-12">
-        <Button>
+        <Button onClick={() => navigate("/home")}>
           Begin Your Journey
         </Button>
       </div>

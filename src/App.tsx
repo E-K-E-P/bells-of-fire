@@ -1,5 +1,5 @@
-import WelcomePage from "./pages/WelcomePage";
+import AppRouter from "./AppRouter";
 
 export default function App() {
-  return <WelcomePage />;
+  return <AppRouter />;
 }
