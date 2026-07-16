@@ -1,10 +1,11 @@
 import Card from "../components/cards/Card";
 import RecommendationCard from "../components/cards/RecommendationCard";
-import { getRecommendedWorkout } from "../features/workouts/getRecommendedWorkout";
 import { useNavigate } from "react-router-dom";
+import { ProgressService } from "../services/ProgressServices";
+import Button from "../components/Button";
 
 export default function HomePage() {
-  const recommendedWorkout = getRecommendedWorkout();
+  const recommendedWorkout = ProgressService.getRecommendedWorkout();
   const navigate = useNavigate();
 
   return (
@@ -12,7 +13,7 @@ export default function HomePage() {
       <div className="max-w-3xl mx-auto space-y-6">
 
         <h1 className="text-4xl font-bold">
-          Today's Training
+          Welcome to the Forge
         </h1>
 
         <Card title="Last 7 Days">
@@ -66,6 +67,14 @@ export default function HomePage() {
             <button className="rounded-xl bg-zinc-800 p-4">
               Recovery
             </button>
+        <Button
+  onClick={() => {
+    ProgressService.resetProgress();
+    window.location.reload();
+  }}
+>
+  Reset Progress
+</Button>
           </div>
         </Card>
 

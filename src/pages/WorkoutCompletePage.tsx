@@ -1,13 +1,19 @@
 import { useNavigate, useParams } from "react-router-dom";
-
 import Button from "../components/Button";
 import { getWorkoutById } from "../features/workouts/getWorkoutById";
+import { useEffect } from "react";
+import { ProgressService } from "../services/ProgressServices";
 
 export default function WorkoutCompletePage() {
   const navigate = useNavigate();
   const { workoutId } = useParams();
 
   const workout = getWorkoutById(workoutId);
+  useEffect(() => {
+  if (workout) {
+    ProgressService.completeWorkout(workout.id);
+  }
+}, [workout]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#121212] px-6 text-[#E9DCC9]">
