@@ -120,11 +120,11 @@ export default function WorkoutPage() {
         </Card>
 
         <Button
-          onClick={() =>
-            alert(`Workout mode for ${workout.name} is coming next!`)
-          }
+            onClick={() =>
+                navigate(`/workout/${workout.id}/play`)
+            }
         >
-          Start Workout
+            Start Workout
         </Button>
       </div>
     </main>
