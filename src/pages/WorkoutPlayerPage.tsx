@@ -14,6 +14,7 @@ export default function WorkoutPlayerPage() {
   const [currentRound, setCurrentRound] = useState(1);
   const [isResting, setIsResting] = useState(false);
   const [restSecondsRemaining, setRestSecondsRemaining] = useState(0);
+ 
 
   useEffect(() => {
   if (!isResting) {
@@ -61,6 +62,17 @@ export default function WorkoutPlayerPage() {
     exerciseIndex === workout.exercises.length - 1;
 
   const isLastRound = currentRound === workout.rounds;
+
+  const exercisesPerRound = workout.exercises.length;
+
+  const totalExercises =
+  exercisesPerRound * workout.rounds;
+
+  const completedExercises =
+  (currentRound - 1) * exercisesPerRound +
+  exerciseIndex;
+
+  const workoutProgress = (completedExercises + 1) / totalExercises * 100;
 
   function formatTime(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60);
@@ -126,7 +138,11 @@ export default function WorkoutPlayerPage() {
         </p>
 
         <p className="mt-4 text-zinc-400">
-          Round {currentRound} of {workout.rounds} begins next
+  Prepare for Round {currentRound} of{" "} {workout.rounds}
+        </p>
+
+        <p className="mt-2 text-sm text-zinc-500">
+  {workout.exercises.length} exercises ahead
         </p>
 
         <div className="mt-10 h-2 overflow-hidden rounded-full bg-zinc-800">
@@ -160,7 +176,9 @@ export default function WorkoutPlayerPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-[#121212] px-6 py-8 text-[#E9DCC9]">
-      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
+      <div key={`${currentRound}-${exerciseIndex}`} className="animate-[fadeIn_300ms_ease-out]">
+
+  <div className="mx-auto flex w-full max-w-xl flex-1 flex-col">
         <header className="flex items-center justify-between">
           <button
             type="button"
@@ -194,6 +212,28 @@ export default function WorkoutPlayerPage() {
             {workout.exercises.length}
           </p>
         </div>
+
+<div className="mb-8">
+  <div className="mb-3 flex items-center justify-between text-sm">
+    <span className="text-zinc-400">
+      Round {currentRound} of {workout.rounds}
+    </span>
+
+    <span className="text-zinc-400">
+      Exercise {exerciseIndex + 1} of{" "}
+      {workout.exercises.length}
+    </span>
+  </div>
+
+  <div className="h-2 overflow-hidden rounded-full bg-zinc-800">
+    <div
+      className="h-full rounded-full bg-orange-500 transition-all duration-500 ease-out"
+      style={{
+        width: `${workoutProgress}%`,
+      }}
+    />
+  </div>
+</div>
 
         <section className="flex flex-1 flex-col items-center justify-center py-10 text-center">
           <p className="text-sm font-semibold uppercase tracking-widest text-orange-500">
@@ -241,6 +281,7 @@ export default function WorkoutPlayerPage() {
           )}
         </footer>
       </div>
-    </main>
+    </div>
+  </main>
   );
-}
+} 
