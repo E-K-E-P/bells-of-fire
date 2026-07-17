@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import Button from "../components/Button";
@@ -12,6 +12,29 @@ export default function WorkoutPlayerPage() {
 
   const [exerciseIndex, setExerciseIndex] = useState(0);
   const [currentRound, setCurrentRound] = useState(1);
+  const [isResting, setIsResting] = useState(false);
+  const [restSecondsRemaining, setRestSecondsRemaining] = useState(0);
+
+  useEffect(() => {
+  if (!isResting) {
+    return;
+  }
+
+  if (restSecondsRemaining <= 0) {
+    setIsResting(false);
+    return;
+  }
+
+  const timerId = window.setInterval(() => {
+    setRestSecondsRemaining((current) =>
+      Math.max(current - 1, 0),
+    );
+  }, 1000);
+
+  return () => {
+    window.clearInterval(timerId);
+  };
+}, [isResting, restSecondsRemaining]);
 
   if (!workout) {
     return (
@@ -39,6 +62,14 @@ export default function WorkoutPlayerPage() {
 
   const isLastRound = currentRound === workout.rounds;
 
+  function formatTime(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes}:${seconds
+    .toString()
+    .padStart(2, "0")}`;
+}
   function handlePrevious() {
     if (!isFirstExercise) {
       setExerciseIndex((current) => current - 1);
@@ -52,24 +83,80 @@ export default function WorkoutPlayerPage() {
   }
 
   function handleNext() {
-    if (!isLastExercise) {
-      setExerciseIndex((current) => current + 1);
-      return;
-    }
-
-    if (!isLastRound) {
-      setCurrentRound((current) => current + 1);
-      setExerciseIndex(0);
-      return;
-    }
-
-    navigate(`/workout/${workout.id}/complete`);
+  if (!isLastExercise) {
+    setExerciseIndex((current) => current + 1);
+    return;
   }
+
+  if (!isLastRound) {
+    setCurrentRound((current) => current + 1);
+    setExerciseIndex(0);
+    setRestSecondsRemaining(workout.restSeconds);
+    setIsResting(true);
+    return;
+  }
+
+  navigate(`/workout/${workout.id}/complete`);
+}
 
   const instruction =
     currentExercise.reps !== undefined
       ? `${currentExercise.reps} reps`
       : `${currentExercise.durationSeconds} seconds`;
+
+      if (isResting) {
+  const restProgress =
+    workout.restSeconds > 0
+      ? restSecondsRemaining / workout.restSeconds
+      : 0;
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[#121212] px-6 py-8 text-[#E9DCC9]">
+      <div className="w-full max-w-md text-center">
+        <p className="text-sm font-semibold uppercase tracking-widest text-orange-500">
+          Round Complete
+        </p>
+
+        <h1 className="mt-5 text-4xl font-bold">
+          Recover
+        </h1>
+
+        <p className="mt-8 text-7xl font-bold tabular-nums">
+          {formatTime(restSecondsRemaining)}
+        </p>
+
+        <p className="mt-4 text-zinc-400">
+          Round {currentRound} of {workout.rounds} begins next
+        </p>
+
+        <div className="mt-10 h-2 overflow-hidden rounded-full bg-zinc-800">
+          <div
+            className="h-full rounded-full bg-orange-500 transition-all duration-1000"
+            style={{
+              width: `${restProgress * 100}%`,
+            }}
+          />
+        </div>
+
+        <div className="mt-10">
+          <Button onClick={() => setIsResting(false)}>
+            Skip Rest
+          </Button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() =>
+            navigate(`/workout/${workout.id}`)
+          }
+          className="mt-4 w-full rounded-xl px-6 py-3 text-zinc-500 transition-colors hover:bg-zinc-900 hover:text-[#E9DCC9]"
+        >
+          Exit Workout
+        </button>
+      </div>
+    </main>
+  );
+}
 
   return (
     <main className="flex min-h-screen flex-col bg-[#121212] px-6 py-8 text-[#E9DCC9]">
@@ -136,11 +223,11 @@ export default function WorkoutPlayerPage() {
 
         <footer className="space-y-3">
           <Button onClick={handleNext}>
-            {isLastExercise && isLastRound
-              ? "Finish Workout"
+           {isLastExercise && isLastRound
+              ? "Complete Workout"
               : isLastExercise
-                ? "Finish Round"
-                : "Next Exercise"}
+              ? "Complete Round"
+              : "Next Exercise"}
           </Button>
 
           {(!isFirstExercise || currentRound > 1) && (
