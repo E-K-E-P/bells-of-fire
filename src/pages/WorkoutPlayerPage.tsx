@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import Button from "../components/Button";
@@ -14,7 +14,38 @@ export default function WorkoutPlayerPage() {
   const [currentRound, setCurrentRound] = useState(1);
   const [isResting, setIsResting] = useState(false);
   const [restSecondsRemaining, setRestSecondsRemaining] = useState(0);
- 
+  const [exerciseSecondsRemaining, setExerciseSecondsRemaining] =
+    useState<number | null>(null);
+
+  const [isExerciseTimerRunning, setIsExerciseTimerRunning] =
+    useState(false);
+  const currentExercise = workout?.exercises[exerciseIndex];
+  const advanceWorkout = useCallback(() => {
+  if (!workout) {
+    return;
+  }
+
+  const lastExercise =
+    exerciseIndex === workout.exercises.length - 1;
+
+  const lastRound =
+    currentRound === workout.rounds;
+
+  if (!lastExercise) {
+    setExerciseIndex((current) => current + 1);
+    return;
+  }
+
+  if (!lastRound) {
+    setCurrentRound((current) => current + 1);
+    setExerciseIndex(0);
+    setRestSecondsRemaining(workout.restSeconds);
+    setIsResting(true);
+    return;
+  }
+
+  navigate(`/workout/${workout.id}/complete`);
+}, [workout, exerciseIndex, currentRound, navigate]);
 
   useEffect(() => {
   if (!isResting) {
@@ -37,6 +68,58 @@ export default function WorkoutPlayerPage() {
   };
 }, [isResting, restSecondsRemaining]);
 
+useEffect(() => {
+  const duration = currentExercise?.durationSeconds;
+
+  if (duration === undefined) {
+    setExerciseSecondsRemaining(null);
+    setIsExerciseTimerRunning(false);
+    return;
+  }
+
+  setExerciseSecondsRemaining(duration);
+  setIsExerciseTimerRunning(true);
+}, [
+  currentRound,
+  exerciseIndex,
+  currentExercise?.durationSeconds,
+]);
+
+useEffect(() => {
+  if (
+    isResting ||
+    !isExerciseTimerRunning ||
+    exerciseSecondsRemaining === null
+  ) {
+    return;
+  }
+
+  if (exerciseSecondsRemaining <= 0) {
+    setIsExerciseTimerRunning(false);
+    advanceWorkout();
+    return;
+  }
+
+  const timerId = window.setTimeout(() => {
+    setExerciseSecondsRemaining((current) => {
+      if (current === null) {
+        return null;
+      }
+
+      return Math.max(current - 1, 0);
+    });
+  }, 1000);
+
+  return () => {
+    window.clearTimeout(timerId);
+  };
+}, [
+  isResting,
+  isExerciseTimerRunning,
+  exerciseSecondsRemaining,
+  advanceWorkout,
+]);
+
   if (!workout) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#121212] px-6 text-[#E9DCC9]">
@@ -54,8 +137,6 @@ export default function WorkoutPlayerPage() {
       </main>
     );
   }
-
-  const currentExercise = workout.exercises[exerciseIndex];
 
   const isFirstExercise = exerciseIndex === 0;
   const isLastExercise =
@@ -95,20 +176,7 @@ export default function WorkoutPlayerPage() {
   }
 
   function handleNext() {
-  if (!isLastExercise) {
-    setExerciseIndex((current) => current + 1);
-    return;
-  }
-
-  if (!isLastRound) {
-    setCurrentRound((current) => current + 1);
-    setExerciseIndex(0);
-    setRestSecondsRemaining(workout.restSeconds);
-    setIsResting(true);
-    return;
-  }
-
-  navigate(`/workout/${workout.id}/complete`);
+  advanceWorkout();
 }
 
   const instruction =
@@ -244,10 +312,32 @@ export default function WorkoutPlayerPage() {
             {currentExercise.name}
           </h1>
 
-          <p className="mt-8 text-6xl font-bold">
-            {instruction}
-          </p>
+          {exerciseSecondsRemaining !== null ? (
+            <div className="mt-6">
+              <p className="text-7xl font-bold tabular-nums"> 
+                {formatTime(exerciseSecondsRemaining)}
+              </p>
 
+              <p className="mt-3 text-sm uppercase tracking-widest text-zinc-500">
+                Seconds Remaining
+              </p>
+            </div>
+) : (
+              <p className="mt-4 text-4xl font-bold">
+                {instruction}
+              </p>
+)}
+{exerciseSecondsRemaining !== null && (
+  <button
+    type="button"
+    onClick={() =>
+      setIsExerciseTimerRunning((current) => !current)
+    }
+    className="mt-6 rounded-xl border border-zinc-700 px-6 py-3 font-semibold text-[#E9DCC9] transition-colors hover:border-orange-500"
+  >
+    {isExerciseTimerRunning ? "Pause Timer" : "Resume Timer"}
+  </button>
+)}
           {currentExercise.weight > 0 && (
             <p className="mt-4 text-2xl text-zinc-300">
               {currentExercise.weight} lb kettlebell
@@ -263,11 +353,13 @@ export default function WorkoutPlayerPage() {
 
         <footer className="space-y-3">
           <Button onClick={handleNext}>
-           {isLastExercise && isLastRound
+            {exerciseSecondsRemaining !== null
+              ? "Skip Exercise"
+                : isLastExercise && isLastRound
               ? "Complete Workout"
-              : isLastExercise
+                : isLastExercise
               ? "Complete Round"
-              : "Next Exercise"}
+                : "Next Exercise"}
           </Button>
 
           {(!isFirstExercise || currentRound > 1) && (
